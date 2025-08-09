@@ -2,40 +2,49 @@ name: Deploy msauth to VPS
 
 on:
   push:
-    branches:
-      - dev
+    branches: [ "dev" ]
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Clonar el repositorio
-      uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-    - name: Configurar SSH
-      uses: webfactory/ssh-agent@v0.7.0
-      with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
 
-    - name: Copiar archivos al VPS
-      run: |
-        ssh -o StrictHostKeyChecking=no root@77.237.237.126 <<EOF
-        cd /root/impulsofirme/backend
-        git pull origin dev
-        if [ ! -d "msauth/.git" ]; then
-          rm -rf msauth
-          git clone -b dev git@github.com:eddygutierrz/msauth.git msauth
-        else
-          cd msauth
-          git reset --hard
-          git clean -fd
-          git pull origin dev
-        fi
-        cd /root/impulsofirme/backend/msauth
-        ./mvnw clean package -DskipTests
-        cd /root/impulsofirme
-        docker-compose down
-        docker-compose build
-        docker-compose up -d
-        EOF
+      - name: Build JAR (msauth)
+        run: |
+          mvn -q -DskipTests -f pom.xml clean package
+        working-directory: .
+
+      # Sube el JAR ya construido al VPS como app.jar
+      - name: Upload JAR to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          port: ${{ secrets.VPS_SSH_PORT }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "target/msauth-*.jar"
+          target: "/root/impulsofirme/backend/msauth/app.jar"
+          overwrite: true
+
+      # Reinicia SOLO el servicio msauth
+      - name: Restart msauth on VPS
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          port: ${{ secrets.VPS_SSH_PORT }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            cd /root/impulsofirme
+            docker compose up -d msauth
+            docker compose ps
