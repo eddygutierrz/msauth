@@ -1,0 +1,41 @@
+name: Deploy msauth to VPS
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Clonar el repositorio
+      uses: actions/checkout@v3
+
+    - name: Configurar SSH
+      uses: webfactory/ssh-agent@v0.7.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+    - name: Copiar archivos al VPS
+      run: |
+        ssh -o StrictHostKeyChecking=no root@77.237.237.126 <<EOF
+        cd /root/impulsofirme/backend
+        git pull origin dev
+        if [ ! -d "msauth/.git" ]; then
+          rm -rf msauth
+          git clone -b dev git@github.com:eddygutierrz/msauth.git msauth
+        else
+          cd msauth
+          git reset --hard
+          git clean -fd
+          git pull origin dev
+        fi
+        cd /root/impulsofirme/backend/msauth
+        ./mvnw clean package -DskipTests
+        cd /root/impulsofirme
+        docker-compose down
+        docker-compose build
+        docker-compose up -d
+        EOF
