@@ -46,5 +46,5 @@ jobs:
           script: |
             set -e
             cd /root/impulsofirme
-            docker compose up -d msauth
-            docker compose ps
+            docker-compose up -d msauth
+            docker-compose ps
