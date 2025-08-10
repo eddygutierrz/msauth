@@ -23,7 +23,7 @@ public class AuthService {
     }
 
     public LoginResponse login(LoginRequest req) {
-        UserAuthDTO u = userClient.obtenerUsuarioPorUsername(req.getUsername());
+        UserAuthDTO u = userClient.findByUsername(req.getUsername());
         if (u == null || u.getEnabled() == null || "INACTIVE".equalsIgnoreCase(u.getEnabled())) {
             throw new RuntimeException("Credenciales inválidas");
         }
