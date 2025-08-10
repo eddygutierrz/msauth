@@ -58,5 +58,5 @@ jobs:
             ls -lh app.jar
       
             cd /root/impulsofirme
-            docker-compose up -d msauth
+            docker compose up -d msauth
             docker logs msauth --tail=80
