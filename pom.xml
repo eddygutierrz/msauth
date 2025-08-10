@@ -109,6 +109,7 @@
 				</configuration>
 			</plugin>
 		</plugins>
+		<finalName>msauth</finalName>
 	</build>
 
 </project>

@@ -19,11 +19,14 @@ jobs:
           java-version: '21'
 
       - name: Build JAR (msauth)
-        run: |
-          mvn -q -DskipTests -f pom.xml clean package
+        run: mvn -q -DskipTests clean package
         working-directory: .
 
-      # Sube el JAR ya construido al VPS como app.jar
+      - name: Verificar artefactos
+        run: |
+          ls -lah
+          ls -lah target || true
+
       - name: Upload JAR to VPS
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -31,11 +34,11 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           port: ${{ secrets.VPS_SSH_PORT }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "target/msauth-*.jar"
-          target: "/root/impulsofirme/backend/msauth/app.jar"
+          source: "target/msauth.jar"
+          target: "/root/impulsofirme/backend/msauth/"
           overwrite: true
+          strip_components: 1
 
-      # Reinicia SOLO el servicio msauth
       - name: Restart msauth on VPS
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -44,7 +47,16 @@ jobs:
           port: ${{ secrets.VPS_SSH_PORT }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            set -e
+            set -euxo pipefail
+            cd /root/impulsofirme/backend/msauth
+      
+            # si por error app.jar es un directorio, bórralo
+            [ -d app.jar ] && rm -rf app.jar
+      
+            rm -f app.jar
+            mv msauth.jar app.jar
+            ls -lh app.jar
+      
             cd /root/impulsofirme
             docker-compose up -d msauth
-            docker-compose ps
+            docker logs msauth --tail=80
