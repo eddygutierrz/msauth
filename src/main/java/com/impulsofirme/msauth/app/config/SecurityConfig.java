@@ -36,7 +36,7 @@ public class SecurityConfig {
         // Orígenes EXACTOS
         cfg.setAllowedOrigins(List.of(
             "https://admin-portal.impulsofirme.com.mx",
-            "http://localhost:4000"  // solo para dev
+            "http://localhost:4200"  // solo para dev
         ));
         cfg.setAllowedMethods(List.of("GET","POST","PUT","DELETE","PATCH","OPTIONS"));
         cfg.setAllowedHeaders(List.of("Authorization","Content-Type","Cache-Control"));
