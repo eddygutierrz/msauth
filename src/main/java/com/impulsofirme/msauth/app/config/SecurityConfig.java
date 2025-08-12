@@ -1,5 +1,8 @@
 package com.impulsofirme.msauth.app.config;
 
+import java.time.Duration;
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -20,8 +23,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                     "/api/auth/**", 
-                    "/auth/validate", 
-                    "/actuator/health").permitAll()
+                    "/auth/validate"
+                    ).permitAll()
                 .anyRequest().authenticated()
             );
         return http.build();
@@ -29,14 +32,19 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        var cfg = new CorsConfiguration();
-        // En dev: permitir todo. En prod: sustituye por tu(s) dominio(s)
-        cfg.addAllowedOriginPattern("*");
-        cfg.addAllowedHeader("*");
-        cfg.addAllowedMethod("*");
-        cfg.setAllowCredentials(true);
+        CorsConfiguration cfg = new CorsConfiguration();
+        // Orígenes EXACTOS
+        cfg.setAllowedOrigins(List.of(
+            "https://admin-portal.impulsofirme.com.mx",
+            "http://localhost:4000"  // solo para dev
+        ));
+        cfg.setAllowedMethods(List.of("GET","POST","PUT","DELETE","PATCH","OPTIONS"));
+        cfg.setAllowedHeaders(List.of("Authorization","Content-Type","Cache-Control"));
+        // Con JWT en Authorization NO necesitamos cookies:
+        cfg.setAllowCredentials(false);
+        cfg.setMaxAge(Duration.ofHours(1));
 
-        var source = new UrlBasedCorsConfigurationSource();
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", cfg);
         return source;
     }
