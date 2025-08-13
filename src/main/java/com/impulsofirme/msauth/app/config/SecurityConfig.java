@@ -18,15 +18,19 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
-            .cors(c -> {})
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(
-                    "/api/auth/**", 
-                    "/auth/validate"
-                    ).permitAll()
-                .anyRequest().authenticated()
-            );
+      // Desactiva CSRF (o ignora el path de auth)
+      .csrf(csrf -> csrf.disable())
+      // .csrf(csrf -> csrf.ignoringRequestMatchers("/api/auth/**"))
+
+      // CORS
+      .cors(c -> c.configurationSource(corsConfigurationSource()))
+
+      // Permisos
+      .authorizeHttpRequests(auth -> auth
+        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+        .requestMatchers("/api/auth/**").permitAll()
+        .anyRequest().authenticated()
+      );
         return http.build();
     }
 
