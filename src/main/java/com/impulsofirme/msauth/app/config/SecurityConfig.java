@@ -22,7 +22,7 @@ public class SecurityConfig {
         .cors(c -> c.configurationSource(corsConfigurationSource()))
         .authorizeHttpRequests(auth -> auth
           .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
-          .requestMatchers("/api/auth/**").permitAll() // ⬅️ libera login, refresh, etc.
+          .requestMatchers("/api/auth/**").permitAll()
           .anyRequest().authenticated()
         );
         return http.build();
@@ -41,6 +41,8 @@ public class SecurityConfig {
         // Con JWT en Authorization NO necesitamos cookies:
         cfg.setAllowCredentials(false);
         cfg.setMaxAge(Duration.ofHours(1));
+        // ⬇⬇⬇ IMPORTANTE si devuelves el token en headers
+        cfg.setExposedHeaders(List.of("Authorization", "Location", "Content-Disposition"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", cfg);
